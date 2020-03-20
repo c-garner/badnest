@@ -14,6 +14,7 @@ This isn't an advertised or public API, it's still better than web scraping, but
 - Nest Thermostat support
 - Nest Thermostat Sensor support
 - Nest Camera support
+- Nest Hot Water support (UK)
 
 ## Drawbacks
 
@@ -27,6 +28,14 @@ This isn't an advertised or public API, it's still better than web scraping, but
 The camera's region is one of `us` or `eu` depending on your region.
 If you're not in the US or EU, you should be able to add your
 two-character country code, and it should work.
+
+## Hot Water Control (UK)
+
+Hot water boosting is controlled through the `badnest.boost_hot_water` service.
+The required variables are:
+  `entity_id`
+  `time_period` - integer in minutes
+  `on_off`
 
 ### Example configuration.yaml - When you're not using the Google Auth Login
 

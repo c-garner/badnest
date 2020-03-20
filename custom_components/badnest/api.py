@@ -48,6 +48,7 @@ class NestAPI():
         self.cameras = []
         self.thermostats = []
         self.temperature_sensors = []
+        self.hotwatercontrollers = []
         self.protects = []
         self.login()
         self._get_devices()
@@ -153,6 +154,7 @@ class NestAPI():
                     sn = bucket.replace('device.', '')
                     self.thermostats.append(sn)
                     self.temperature_sensors.append(sn)
+                    self.hotwatercontrollers.append(sn)
                     self.device_data[sn] = {}
 
             self.cameras = self._get_cameras()
@@ -270,6 +272,9 @@ class NestAPI():
                         self.device_data[sn]['eco'] = True
                     else:
                         self.device_data[sn]['eco'] = False
+                    # Hot water
+                    self.device_data[sn]['hot_water_active'] = \
+                        sensor_data["hot_water_active"]
                 # Protect
                 elif bucket["object_key"].startswith(
                         f"topaz.{sn}"):
@@ -483,6 +488,34 @@ class NestAPI():
             _LOGGER.debug('Failed to set eco, trying to log in again')
             self.login()
             self.thermostat_set_eco_mode(device_id, state)
+
+    def hotwater_set_boost(self, device_id, time):
+        if device_id not in self.hotwatercontrollers:
+            return
+
+        try:
+            self._session.post(
+                f"{self._czfe_url}/v5/put",
+                json={
+                    "objects": [
+                        {
+                            "object_key": f'device.{device_id}',
+                            "op": "MERGE",
+                            "value": {"hot_water_boost_time_to_end": time},
+                        }
+                    ]
+                },
+                headers={"Authorization": f"Basic {self._access_token}"},
+            )
+        except requests.exceptions.RequestException as e:
+            _LOGGER.error(e)
+            _LOGGER.error('Failed to boost hot water, trying again')
+            self.hotwater_set_boost(device_id, time)
+        except KeyError:
+            _LOGGER.debug('Failed to boost hot water, trying to log in again')
+            self.login()
+            self.hotwater_set_boost(device_id, time)
+
 
     def _camera_set_properties(self, device_id, property, value):
         if device_id not in self.cameras:
